@@ -27,3 +27,5 @@ class ClienteTCP:
 
 
 cliente_tcp = ClienteTCP('172.23.0.6', 8080)
+
+print("teste")
