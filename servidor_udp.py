@@ -10,5 +10,3 @@ while True:
     data, client_adress = server_socket.recvfrom(2048)
 
     print(f'O cliente {client_adress} mandou >>> {data.decode()}')
-
-    print("")
