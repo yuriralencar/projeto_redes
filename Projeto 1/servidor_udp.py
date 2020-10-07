@@ -9,7 +9,7 @@ UDPServerSocket.bind(('localhost', 9500))
 
 listaJogadores = []
 Pontuacao = []
-while len(listaJogadores) < 5:
+while len(listaJogadores) < 1:
 
     #Recebe mensagem de cliente
     mensagem_cliente = UDPServerSocket.recvfrom(1024)
@@ -18,8 +18,9 @@ while len(listaJogadores) < 5:
     endereco_cliente = mensagem_cliente[1]
     ip_cliente = mensagem_cliente[1][0]
     
-    listaJogadores.append(ip_cliente)
+    listaJogadores.append(endereco_cliente)
     Pontuacao.append(0)
+
     
     if data == "1":
         resposta_cliente = str.encode("Estamos procurando oponentes para você...")
@@ -30,13 +31,18 @@ while len(listaJogadores) < 5:
     else:
         resposta_cliente = str.encode("Entrada inválida")
         UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
-        
-    print(listaJogadores)
 
-    
-    #print(" ")
-    #print((f'O cliente ({ip_cliente}) enviou: {data}'))
+#trabalhar com o arquivo de texto
+pergunta = ("Tu é gay?", "GRAÇAS A DEUS")
+for c in listaJogadores:
+    resposta_cliente = str.encode(pergunta[0])
+    UDPServerSocket.sendto(resposta_cliente, c)
 
-    #Responde para cliente
-    resposta_cliente = str.encode("Estamos procurando oponentes para você...")
-    UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
+mensagem_cliente = UDPServerSocket.recvfrom(1024)
+
+data = mensagem_cliente[0].decode()
+endereco_cliente = mensagem_cliente[1]
+
+print(data)
+
+
