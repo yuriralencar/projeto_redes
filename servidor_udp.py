@@ -19,9 +19,10 @@ while(True):
     endereco_cliente = mensagem_cliente[1]
     ip_cliente = mensagem_cliente[1][0]
 
-    if ip_cliente not in listaJogadores:
-        listaJogadores.append(ip_cliente)
-        Pontuacao.append(0)
+    while len(listaJogadores) < 2:
+        if ip_cliente not in listaJogadores:
+            listaJogadores.append(ip_cliente)
+            Pontuacao.append(0)
     
 
     print(listaJogadores)
