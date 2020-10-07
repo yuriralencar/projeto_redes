@@ -1,17 +1,14 @@
+import time
 from socket import socket, AF_INET, SOCK_DGRAM
 
 #Criacao do socket
 UDPServerSocket = socket(AF_INET, SOCK_DGRAM)
-UDPServerSocket.bind(('192.168.1.65', 9500))
+UDPServerSocket.bind(('localhost', 9500))
 
 #print("Servidor UDP escutando requisicoes")
 
 while(True):
 
-    #Recebe mensagem de cliente
-    mensagem_cliente = UDPServerSocket.recvfrom(1024)
-
-    #mensagem_cliente = (mensagem em bytes,(ip_cliente,porta))
     listaJogadores = []
     Pontuacao = []
 
@@ -19,10 +16,17 @@ while(True):
     endereco_cliente = mensagem_cliente[1]
     ip_cliente = mensagem_cliente[1][0]
 
-    while len(listaJogadores) < 2:
-        if ip_cliente not in listaJogadores:
-            listaJogadores.append(ip_cliente)
-            Pontuacao.append(0)
+    end_time = time.time() + 10
+    countTimer = 0
+    sleepTime = 1
+    while (len(listaJogadores) < 2) or (time.time() < end_time):
+
+        #Recebe mensagem de cliente
+        mensagem_cliente = UDPServerSocket.recvfrom(1024)
+        time.sleep(sleepTime)
+        countTimer += sleepTime
+        listaJogadores.append(ip_cliente)
+        Pontuacao.append(0)
     
 
     print(listaJogadores)
