@@ -7,37 +7,36 @@ UDPServerSocket.bind(('localhost', 9500))
 
 #print("Servidor UDP escutando requisicoes")
 
-while(True):
+listaJogadores = []
+Pontuacao = []
+while len(listaJogadores) < 5:
 
-    listaJogadores = []
-    Pontuacao = []
+    #Recebe mensagem de cliente
+    mensagem_cliente = UDPServerSocket.recvfrom(1024)
 
     data = mensagem_cliente[0].decode()
     endereco_cliente = mensagem_cliente[1]
     ip_cliente = mensagem_cliente[1][0]
-
-    end_time = time.time() + 10
-    countTimer = 0
-    sleepTime = 1
-    while (len(listaJogadores) < 2) or (time.time() < end_time):
-
-        #Recebe mensagem de cliente
-        mensagem_cliente = UDPServerSocket.recvfrom(1024)
-        time.sleep(sleepTime)
-        countTimer += sleepTime
-        listaJogadores.append(ip_cliente)
-        Pontuacao.append(0)
     
-
+    listaJogadores.append(ip_cliente)
+    Pontuacao.append(0)
+    
+    if data == "1":
+        resposta_cliente = str.encode("Estamos procurando oponentes para você...")
+        UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
+    elif data == "2":
+        resposta_cliente = str.encode("Aqui está a lista com as maiores pontuações")
+        UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
+    else:
+        resposta_cliente = str.encode("Entrada inválida")
+        UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
+        
     print(listaJogadores)
 
-
-
-
     
-    print(" ")
-    print((f'O cliente ({ip_cliente}) enviou: {data}'))
+    #print(" ")
+    #print((f'O cliente ({ip_cliente}) enviou: {data}'))
 
     #Responde para cliente
-    resposta_cliente = str.encode("Mensagem recebida com sucesso")
+    resposta_cliente = str.encode("Estamos procurando oponentes para você...")
     UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
