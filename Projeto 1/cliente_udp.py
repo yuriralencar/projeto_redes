@@ -10,7 +10,7 @@ while(True):
 
 
     #Envia a mensagem para o servidor
-    UDPClientSocket.sendto(mensagem_cliente, ('localhost', 9500))
+    UDPClientSocket.sendto(mensagem_cliente, ('172.23.0.6', 9500))
 
     #Recebe resposta do servidor   ([0] = mensagem, [1] = endereco ([0]IP, [1]PORTA))
     resposta_servidor = UDPClientSocket.recvfrom(1024)
