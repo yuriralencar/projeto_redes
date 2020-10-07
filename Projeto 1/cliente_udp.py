@@ -13,7 +13,7 @@ mensagem_cliente = (input("Enviar para o servidor: ")).encode()
 
 
 #Envia a mensagem para o servidor
-UDPClientSocket.sendto(mensagem_cliente, ('172.23.0.8', 9500))
+UDPClientSocket.sendto(mensagem_cliente, ('localhost', 9500))
 
 #Recebe resposta do servidor   ([0] = mensagem, [1] = endereco ([0]IP, [1]PORTA))
 resposta_servidor = UDPClientSocket.recvfrom(1024)
@@ -22,3 +22,12 @@ msgServidor = resposta_servidor[0].decode()
 ipServidor = resposta_servidor[1][0]
 
 print((f'{msgServidor}'))
+    
+resposta_servidor = UDPClientSocket.recvfrom(1024)
+msgServidor = resposta_servidor[0].decode()
+print((f'{msgServidor}'))
+
+mensagem_cliente = (input("Sua resposta é... ")).encode()
+UDPClientSocket.sendto(mensagem_cliente, ('localhost', 9500))
+
+
