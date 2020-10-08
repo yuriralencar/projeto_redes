@@ -9,7 +9,7 @@ print(" 1 - Iniciar Jogo ")
 print(" 2 - Visualizar os maiores rankings ")
 print("---------------------------------")
 #Criação da mensagem a ser enviada
-mensagem_cliente = (input("Enviar para o servidor: ")).encode()
+mensagem_cliente = (input("Opção desejada: ")).encode()
 
 
 #Envia a mensagem para o servidor
@@ -22,12 +22,35 @@ msgServidor = resposta_servidor[0].decode()
 ipServidor = resposta_servidor[1][0]
 
 print((f'{msgServidor}'))
-    
-resposta_servidor = UDPClientSocket.recvfrom(1024)
-msgServidor = resposta_servidor[0].decode()
-print((f'{msgServidor}'))
 
-mensagem_cliente = (input("Sua resposta é... ")).encode()
-UDPClientSocket.sendto(mensagem_cliente, ('localhost', 9500))
+for c in range(5):
+    resposta_servidor = UDPClientSocket.recvfrom(1024)
+    msgServidor = resposta_servidor[0].decode()
+
+    print(f'{msgServidor}')
+    
+    mensagem_cliente = (input("Digite sua resposta: ")).encode()
+    UDPClientSocket.sendto(mensagem_cliente, ('localhost', 9500))
+
+    resposta_servidor = UDPClientSocket.recvfrom(1024)
+    msgServidor = resposta_servidor[0].decode()
+    
+    while True:
+        
+        if msgServidor != "False":
+            if msgServidor == "400":
+                mensagem_cliente = (input("Wrong answer.. tente novamente: ")).encode()
+                UDPClientSocket.sendto(mensagem_cliente, ('localhost', 9500))
+
+                resposta_servidor = UDPClientSocket.recvfrom(1024)
+                msgServidor = resposta_servidor[0].decode()
+            else:
+                if msgServidor == "500":
+                    print("Resposta correta. Próxima pergunta --> ")
+                else:
+                    print("Fim de jogo! Mas tu é gay, para de negar!")   
+                break
+        else:
+            break
 
 
