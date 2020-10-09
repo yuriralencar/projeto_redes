@@ -19,3 +19,6 @@ while(True):
     ipServidor = resposta_servidor[1][0]
 
     print((f'O servidor {ipServidor} respondeu: {msgServidor}'))
+
+
+#teesteeee
