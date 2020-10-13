@@ -74,7 +74,7 @@ while True:
 for k in range(0, 5):
 
     print(k)
-    arquivo = open("C:\\Users\\vinny\\Desktop\\projeto_redes.txt", "r")
+    arquivo = open("projeto_redes.txt", "r")
     perguntas = le_arquivo(arquivo)
     print(perguntas)
     arquivo.close()
