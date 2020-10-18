@@ -1,72 +1,102 @@
 from socket import socket, AF_INET, SOCK_DGRAM
+from threading import Thread
+import time
+
+parada = False
+msgServidor = ""
 
 UDPClientSocket = socket(AF_INET, SOCK_DGRAM)
 
-print("---------------------------------")
+
+def envia(mensagem):  # Criação e envio da mensagem
+    mensagem_cliente = mensagem.encode()
+    UDPClientSocket.sendto(mensagem_cliente, ('192.168.1.91', 9500))
+
+
+def recebe():  # Thread
+    global msgServidor
+
+    while (True):
+        resposta_servidor = UDPClientSocket.recvfrom(1024)  # ([0] = mensagem, [1] = endereco ([0]IP, [1]PORTA))
+        msgServidor = str(resposta_servidor[0].decode())
+        # print("\nRECEBEU:",msgServidor)
+        time.sleep(1)
+
+
+def partida():  # Thread 2
+    global parada
+    global msgServidor
+
+    while (msgServidor == 'start' or msgServidor == '500' or msgServidor == '700' or msgServidor == '800'):
+        pass
+
+    pergunta = msgServidor
+
+    print(pergunta)  # Imprime pergunta nº c+1
+
+    envia(input("Insira sua resposta: "))  # responde ao servidor. funcao recebe() recebe avaliacao
+
+    while (True):
+        while (msgServidor == pergunta):
+            pass
+
+        if msgServidor == "400":
+            envia(input("Resposta incorreta.. tente novamente: "))
+            time.sleep(1)
+
+        elif msgServidor == "500":
+            print("\nResposta correta! Próxima pergunta --> ")
+            break
+
+
+print("---------------------------------")  ###Início do programa
 print("    BEM VINDO AO JOGUINHO        ")
 print("Por, favor selecione a opção desejada: ")
 print(" 1 - Iniciar Jogo ")
 print(" 2 - Visualizar os maiores rankings ")
 print("---------------------------------")
 
-#Criação e envio da mensagem
-mensagem_cliente = (input("Opção desejada: ")).encode()
-UDPClientSocket.sendto(mensagem_cliente, ('localhost', 9500))
+envia(input("Opção desejada: "))
 
-# Recebe resposta do servidor   ([0] = mensagem, [1] = endereco ([0]IP, [1]PORTA))
-resposta_servidor = UDPClientSocket.recvfrom(1024)
+t = Thread(target=recebe, daemon=True)  # Thread para receber dados do servidor
+t.start()
 
-msgServidor = resposta_servidor[0].decode()
-ipServidor = resposta_servidor[1][0]
-
-print((f'{msgServidor}'))  #Aguardando outros participantes...
-
-def envia(mensagem):
-    mensagem_cliente = mensagem.encode()
-    UDPClientSocket.sendto(mensagem_cliente , ('localhost', 9500))
-    
-
-def partida():
+while (msgServidor == ''):
     pass
 
+print(msgServidor)  # msgServidor = Aguardando outros participantes...
 
+while (msgServidor != 'start'):
+    # print(msgServidor,"msg")
+    pass
 
+print("Iniciando competicao...")  # Iniciando competicao...
 
-for c in range(5):
-    t = Thread(target=partida, daemon=True)  #Thread para partida
-    t.start()
+for c in range(5):  # 5 partidas
+    print("\npartida n:", c + 1)
 
-    
-    resposta_servidor = UDPClientSocket.recvfrom(1024)
-    msgServidor = resposta_servidor[0].decode()  #recebe pergunta
+    t2 = Thread(target=partida, daemon=True)  # Thread para cada partida
+    t2.start()
 
-    print(f'{msgServidor}') #imprime pergunta
-    
-    envia(input("Digite sua resposta: "))   #envia resposta para servidor
+    anterior = msgServidor
 
-    resposta_servidor = UDPClientSocket.recvfrom(1024)
-    msgServidor = resposta_servidor[0].decode() #recebe avaliacao
-    
-    while True:
-        if msgServidor == "400":  #resposta errada
-            envia(input("Wrong answer.. tente novamente: "))
-
-            resposta_servidor = UDPClientSocket.recvfrom(1024)
-            msgServidor = resposta_servidor[0].decode()
-            print("m",msgServidor)
-
-        elif msgServidor == "500":
-            print("Resposta correta. Próxima pergunta --> ")
+    while (True):
+        if msgServidor == '500':
+            time.sleep(2)
             break
 
-        elif msgServidor =="600":
-            print("tle") ####
-            break      
+        if msgServidor == '700' and anterior!='500':
+            print("Outro jogador acertou")
+            msgServidor = 'start'
+            break
 
-print("Fim de jogo! Mas tu é gay, para de negar!")   
+        elif msgServidor == '800':
+            print("\nTempo esgotado")
+            msgServidor = 'start'
+            break
 
+        else:
+            time.sleep(0.7)
 
-
-
-
-
+print("Fim de jogo!")
+exit(0)
