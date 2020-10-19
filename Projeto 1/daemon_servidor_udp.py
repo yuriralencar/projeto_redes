@@ -39,6 +39,14 @@ while len(listaJogadores) < quant_jogadores:  #Quantidade de jogadores
         resposta_cliente = str.encode("Entrada inválida")
         UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
 
+def envia_todos(mensagem): #Envia uma mensagem para todos os jogadores
+    global listaJogadores
+
+    for cliente in listaJogadores:  
+        resposta_cliente = str.encode(mensagem)
+        UDPServerSocket.sendto(resposta_cliente, cliente)
+
+
 def recebe_mensagens():
     global resposta
 
@@ -55,15 +63,18 @@ def partida():
     global acerto
     acerto = False
 
-    for c in listaJogadores:  #Envia a pergunta para todos os jogadores
-        resposta_cliente = str.encode(listaPerguntas[k][0])
-        UDPServerSocket.sendto(resposta_cliente, c)  #c = (ip_cliente, porta_cliente) 
+    envia_todos(listaPerguntas[k][0]) #Envia a pergunta para todos os jogadores
+
+    #for c in listaJogadores:  
+    #    resposta_cliente = str.encode(listaPerguntas[k][0])
+    #    UDPServerSocket.sendto(resposta_cliente, c)  #c = (ip_cliente, porta_cliente) 
 
     while(True):
         while(resposta=="0"):  #mensagem modificada na funcao recebe_mensagens
             time.sleep(0.1)
 
         if (resposta != listaPerguntas[k][1]): #Resposta errada
+
             resposta_cliente = str.encode("400")   
             UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
 
@@ -91,8 +102,10 @@ def partida():
 #trabalhar com arquivo de texto
 listaPerguntas = [('Pergunta no 1','1'),('Pergunta no 2','2'),('Pergunta no 3','3'),('Pergunta no 4','4'),('Pergunta no 5','5')]
 
-resposta_cliente = str.encode('start')
-UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
+#resposta_cliente = str.encode('start')
+#UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
+
+envia_todos('start')
 
 time.sleep(2)
 
