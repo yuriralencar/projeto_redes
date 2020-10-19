@@ -46,6 +46,14 @@ def envia_todos(mensagem): #Envia uma mensagem para todos os jogadores
         resposta_cliente = str.encode(mensagem)
         UDPServerSocket.sendto(resposta_cliente, cliente)
 
+def envia_resposta_errada(mensagem, pular): #Envia uma mensagem para todos os jogadores
+    global listaJogadores
+
+    for cliente in listaJogadores: 
+        if cliente != pular: 
+            resposta_cliente = str.encode(mensagem)
+            UDPServerSocket.sendto(resposta_cliente, cliente)
+
 
 def recebe_mensagens():
     global resposta
@@ -125,14 +133,14 @@ for k in range(5):  #5 rodadas
     while(True):
         if(acerto):
             resposta_cliente = str.encode('700')
-            UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
+            UDPServerSocket.sendto(resposta_cliente, endereco_cliente) #envia para quem acertou
+            envia_resposta_errada('900', endereco_cliente) #envie para o resto que errou
             print(endereco_cliente[0],"acertou")
             acerto = False
             break
         if(tempo==10):   
             print("Tempo esgotado")
-            resposta_cliente = str.encode('800')
-            UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
+            envia_todos('800') #enviar para todo mundo
             break
         else:
             time.sleep(1)
