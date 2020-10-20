@@ -10,7 +10,7 @@ UDPClientSocket = socket(AF_INET, SOCK_DGRAM)
 
 def envia(mensagem):  # Criação e envio da mensagem
     mensagem_cliente = mensagem.encode()
-    UDPClientSocket.sendto(mensagem_cliente, ('localhost', 9500))
+    UDPClientSocket.sendto(mensagem_cliente, ('172.23.0.6', 9500))
 
 
 def recebe():  # Thread
@@ -27,7 +27,7 @@ def partida():  # Thread 2
     global parada
     global msgServidor
 
-    while (msgServidor == 'start' or msgServidor == '500' or msgServidor == '700' or msgServidor == '800'):
+    while (msgServidor == 'start' or msgServidor == '500' or msgServidor == '900' or msgServidor == '800'):
         pass
 
     pergunta = msgServidor
@@ -85,7 +85,7 @@ for c in range(5):  # 5 partidas
             time.sleep(2)
             break
 
-        if msgServidor == '700':
+        if msgServidor == '900':
             print("\nOutro jogador acertou")
             msgServidor = 'start'
             break
