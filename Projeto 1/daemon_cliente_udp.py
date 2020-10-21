@@ -48,15 +48,17 @@ def partida():  # Thread 2
             print("\nResposta correta! Próxima pergunta --> ")
             break
 
-
 print("---------------------------------")  ###Início do programa
 print("    BEM VINDO AO JOGUINHO        ")
-print("Por, favor selecione a opção desejada: ")
-print(" 1 - Iniciar Jogo ")
-print(" 2 - Visualizar os maiores rankings ")
-print("---------------------------------")
+print("Para iniciar, digite seu nome!")
 
-envia(input("Opção desejada: "))
+
+nome = input("Nome:")
+
+while(nome==""):
+    nome = input("Nome inválido, tente novamente:")
+
+envia(nome)
 
 t = Thread(target=recebe, daemon=True)  # Thread para receber dados do servidor
 t.start()
@@ -98,5 +100,13 @@ for c in range(5):  # 5 partidas
         else:
             time.sleep(0.7)
 
-print("\nFim de jogo!")
+
+print("\nFim de jogo! Pontuações da rodada:")
+
+resposta_servidor = UDPClientSocket.recvfrom(1024)  # ([0] = mensagem, [1] = endereco ([0]IP, [1]PORTA))
+msgServidor = str(resposta_servidor[0].decode())
+print(msgServidor)
+
+
+#print("Deseja jogar novamente?")
 exit(0)
