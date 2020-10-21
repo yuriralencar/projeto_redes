@@ -4,7 +4,7 @@ import time
 
 #Criacao do socket
 UDPServerSocket = socket(AF_INET, SOCK_DGRAM)
-UDPServerSocket.bind(('172.23.0.6', 9500))
+UDPServerSocket.bind(('localhost', 9500))
 
 resposta = "0"
 acerto = None
@@ -17,7 +17,7 @@ print("Servidor UDP escutando requisicoes...")
 listaJogadores = []
 Pontuacao = []
 
-quant_jogadores = 3
+quant_jogadores = 1
 
 while len(listaJogadores) < quant_jogadores:  #Quantidade de jogadores
 
@@ -46,6 +46,38 @@ def envia_todos(mensagem): #Envia uma mensagem para todos os jogadores
     for cliente in listaJogadores:  
         resposta_cliente = str.encode(mensagem)
         UDPServerSocket.sendto(resposta_cliente, cliente)
+
+def num(number):
+    if number % 2 == 0:
+        return True
+    else:
+        return False
+
+
+def elimina_n(palavra):
+    '''Elimina o \n'''
+    novaString = ""
+    for caracter in palavra:
+        if caracter != "\n":
+            novaString += caracter
+    return novaString
+
+
+def le_arquivo(arquivo):
+    '''Cria nova lista sem \n'''
+    novaLista = []
+    cont = 0
+    tupla = ()
+    for palavra in arquivo:
+        cont += 1
+        caracter = elimina_n(palavra)
+        print(caracter)
+        tupla1 = (caracter,)
+        tupla += tupla1
+        if num(cont):
+            novaLista.append(tupla)
+            tupla = ()
+    return novaLista
 
 def envia_resposta_errada(pular): #Envia uma mensagem para todos os jogadores
     global listaJogadores
@@ -114,7 +146,9 @@ def partida():
 
 
 #trabalhar com arquivo de texto
-listaPerguntas = [('Pergunta no 1','1'),('Pergunta no 2','2'),('Pergunta no 3','3'),('Pergunta no 4','4'),('Pergunta no 5','5')]
+arquivo = open("projeto_redes.txt", "r")
+perguntas = le_arquivo(arquivo)
+arquivo.close()
 
 #resposta_cliente = str.encode('start')
 #UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
