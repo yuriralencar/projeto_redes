@@ -10,7 +10,7 @@ UDPClientSocket = socket(AF_INET, SOCK_DGRAM)
 
 def envia(mensagem):  # Criação e envio da mensagem
     mensagem_cliente = mensagem.encode()
-    UDPClientSocket.sendto(mensagem_cliente, ('172.23.0.6', 9500))
+    UDPClientSocket.sendto(mensagem_cliente, ('localhost', 9500))
 
 
 def recebe():  # Thread
