@@ -15,6 +15,7 @@ endereco_cliente = None
 print("Servidor UDP escutando requisicoes...")
 
 listaJogadores = []
+listaNomes = []
 Pontuacao = []
 
 quant_jogadores = 1
@@ -25,20 +26,15 @@ while len(listaJogadores) < quant_jogadores:  #Quantidade de jogadores
     mensagem_cliente = UDPServerSocket.recvfrom(1024) #([0] = mensagem, [1] = endereco ([0]IP, [1]PORTA))
 
     data = mensagem_cliente[0].decode()
-    endereco_cliente = mensagem_cliente[1]
+    endereco_cliente = mensagem_cliente[1]   #('192.168.0.1',84859)
     
     listaJogadores.append(endereco_cliente)
+    listaNomes.append(data)
     Pontuacao.append(0)
 
-    if data == "1":
-        resposta_cliente = str.encode("\nAguardando outros participantes...\n")
-        UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
-    elif data == "2":
-        resposta_cliente = str.encode("Aqui está a lista com as maiores pontuações")
-        UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
-    else:
-        resposta_cliente = str.encode("Entrada inválida")
-        UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
+    resposta_cliente = str.encode("\nAguardando outros participantes...\n")
+    UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
+
 
 def envia_todos(mensagem): #Envia uma mensagem para todos os jogadores
     global listaJogadores
@@ -146,17 +142,18 @@ def partida():
 
 
 #trabalhar com arquivo de texto
-arquivo = open("projeto_redes.txt", "r")
-perguntas = le_arquivo(arquivo)
-arquivo.close()
+#arquivo = open("projeto_redes.txt", "r")
+#perguntas = le_arquivo(arquivo)
+#arquivo.close()
 
 #resposta_cliente = str.encode('start')
 #UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
 
+listaPerguntas = [('SIM', 'SIM'),('SIM', 'SIM'),('SIM', 'SIM'),('SIM', 'SIM'),('SIM', 'SIM')]
+
 envia_todos('start')
 
 time.sleep(2)
-
 
 #t = Thread(target=recebe_mensagens, daemon=True)  #Thread para receber mensagens dos usuarios
 #t.start()
@@ -177,7 +174,7 @@ for k in range(5):  #5 rodadas
             print(endereco_cliente[0],"acertou")
             break
         
-        if(tempo==10):   
+        if(tempo==5):   
             print("Tempo esgotado")
             envia_todos('800') #enviar para todo mundo
             break
@@ -187,6 +184,14 @@ for k in range(5):  #5 rodadas
             
     acerto = False
 
-print(Pontuacao)
+pontos = ""
 
-#exit(0)
+for x in range(len(listaNomes)):
+
+    pontos+= (listaNomes[x]+ " = " + str(Pontuacao[x]) + "\n")
+
+envia_todos(pontos)
+
+print("Fim")
+
+
