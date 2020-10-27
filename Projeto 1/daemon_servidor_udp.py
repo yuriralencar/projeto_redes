@@ -4,164 +4,160 @@ import time
 
 #Criacao do socket
 UDPServerSocket = socket(AF_INET, SOCK_DGRAM)
-UDPServerSocket.bind(('localhost', 9500))
+UDPServerSocket.bind(('192.168.1.91', 9500))
 
-resposta = "0"
+resposta_cadastrado = ''
+resposta_nao_cadastrado = ''
+
+endereco_cliente_cad = None
+endereco_cliente_nao_cad = None
+
 acerto = None
-endereco_cliente = None
+ja_iniciou = False
 
-######Inicio do programa
+def recebe_mensagens():
+    global resposta_cadastrado
+    global resposta_nao_cadastrado
+    global endereco_cliente_cad
+    global endereco_cliente_nao_cad
+    global ja_iniciou
+
+    while(True):
+        mensagem_cliente = UDPServerSocket.recvfrom(1024)   #((Cliente1,Mensagem),(IP,Porta))
+        msg = str(mensagem_cliente[0].decode())     #resposta dada pelo cliente
+        end = mensagem_cliente[1]  #('192.168.0.1',84859)
+
+        status_cliente = ''
+        mensagem = ''
+
+        for x in msg:
+            if (x == '&'):
+                status_cliente = mensagem
+                mensagem = ''
+            else:
+                mensagem += x
+
+        print("Recebeu",mensagem,"de",end[0])
+
+        if(status_cliente=="Cliente1"):
+            resposta_cadastrado = mensagem
+            endereco_cliente_cad =  end
+
+        elif(status_cliente=="Cliente0" and ja_iniciou):
+            resposta_cliente = str.encode('Cliente0&'+'JaIniciou')
+            UDPServerSocket.sendto(resposta_cliente, end)
+            print("\nAlguem nao cadastrado tentou se conectar\n")
+
+        else:
+            resposta_nao_cadastrado = mensagem
+            endereco_cliente_nao_cad =  end
+
+
+def envia_todos(mensagem, status): #Envia uma mensagem para todos os jogadores
+    global listaJogadores    #status = Cliente1/Thread
+
+    for cliente in listaJogadores:  #cliente = (IP, Porta)
+        resposta_cliente = str.encode(status+mensagem)
+        UDPServerSocket.sendto(resposta_cliente, cliente)
+
+def envia_resposta_errada(pular): #Envia uma mensagem para todos os jogadores que nao acertaram
+    global listaJogadores
+
+    for cliente in listaJogadores:
+        if cliente != pular:
+            resposta_cliente = str.encode('Thread&'+'900')
+            UDPServerSocket.sendto(resposta_cliente, cliente)
+        else:
+            resposta_acerto = str.encode('Cliente1&'+'500')  
+            UDPServerSocket.sendto(resposta_acerto, pular)
+            
+def partida():
+    global acerto
+    global resposta_cadastrado
+    global endereco_cliente_cad
+
+    acerto = False
+
+    envia_todos(listaPerguntas[k][0],'Cliente1&') #Envia a pergunta para todos os jogadores
+
+    while(True):
+        while(resposta_cadastrado==''):  
+            time.sleep(0.1)
+
+        if (resposta_cadastrado != listaPerguntas[k][1]): #Resposta errada
+
+            resposta_cliente = str.encode('Cliente1&'+'400')   
+            UDPServerSocket.sendto(resposta_cliente, endereco_cliente_cad)
+
+            posicao = listaJogadores.index(endereco_cliente_cad)
+            pontuacao[posicao] -= 5
+
+            resposta_cadastrado = ''
+            acerto = False
+                
+        elif (resposta_cadastrado == listaPerguntas[k][1]): #Resposta correta
+
+            print(endereco_cliente_cad[0],"acertou")
+            envia_resposta_errada(endereco_cliente_cad) #envia para o resto que errou
+
+            posicao = listaJogadores.index(endereco_cliente_cad)
+            pontuacao[posicao] += 25
+
+            resposta_cadastrado = ''
+            acerto = True
+
+            break
+
+######## Inicio do programa (main()) #######
+
+t = Thread(target=recebe_mensagens, daemon=True)  #Thread para receber mensagens dos usuarios
+t.start()
 
 print("Servidor UDP escutando requisicoes...")
 
 listaJogadores = []
 listaNomes = []
-Pontuacao = []
+pontuacao = []
 
 quant_jogadores = 1
+
 
 while len(listaJogadores) < quant_jogadores:  #Quantidade de jogadores
 
     #Recebe primeira mensagem de cliente (pedido de conexao)
-    mensagem_cliente = UDPServerSocket.recvfrom(1024) #([0] = mensagem, [1] = endereco ([0]IP, [1]PORTA))
+    while(resposta_nao_cadastrado==''):
+        time.sleep(0.1)
 
-    data = mensagem_cliente[0].decode()
-    endereco_cliente = mensagem_cliente[1]   #('192.168.0.1',84859)
-    
-    listaJogadores.append(endereco_cliente)
-    listaNomes.append(data)
-    Pontuacao.append(0)
+    listaNomes.append(resposta_nao_cadastrado)
+    listaJogadores.append(endereco_cliente_nao_cad)
+    pontuacao.append(0)
 
-    resposta_cliente = str.encode("\nAguardando outros participantes...\n")
-    UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
+    time.sleep(1)
 
+    resposta_cliente = str.encode(('Cliente1&\nAguardando outros participantes...\n'))
+    UDPServerSocket.sendto(resposta_cliente, endereco_cliente_nao_cad)
 
-def envia_todos(mensagem): #Envia uma mensagem para todos os jogadores
-    global listaJogadores
+    resposta_nao_cadastrado=''
 
-    for cliente in listaJogadores:  
-        resposta_cliente = str.encode(mensagem)
-        UDPServerSocket.sendto(resposta_cliente, cliente)
+time.sleep(1) # Aguarda todos receberem a mensagem "Aguardando outros participantes...")
 
-def num(number):
-    if number % 2 == 0:
-        return True
-    else:
-        return False
+listaPerguntas = [('Pergunta 1', '1'),('Pergunta 2', '2'),('Pergunta 3', '3'),('Pergunta 4', '4'),('Pergunta 5', '5')]
 
+comandoInicio = 'start'
 
-def elimina_n(palavra):
-    '''Elimina o \n'''
-    novaString = ""
-    for caracter in palavra:
-        if caracter != "\n":
-            novaString += caracter
-    return novaString
+envia_todos(comandoInicio,'Cliente1&')
 
+time.sleep(1)  #espera todos receberem o comando de start
 
-def le_arquivo(arquivo):
-    '''Cria nova lista sem \n'''
-    novaLista = []
-    cont = 0
-    tupla = ()
-    for palavra in arquivo:
-        cont += 1
-        caracter = elimina_n(palavra)
-        print(caracter)
-        tupla1 = (caracter,)
-        tupla += tupla1
-        if num(cont):
-            novaLista.append(tupla)
-            tupla = ()
-    return novaLista
+resposta = ''
 
-def envia_resposta_errada(pular): #Envia uma mensagem para todos os jogadores
-    global listaJogadores
-    print("pull",pular)
-
-    for cliente in listaJogadores:
-        if cliente != pular:
-            resposta_cliente = str.encode('900')
-            UDPServerSocket.sendto(resposta_cliente, cliente)
-        else:
-            resposta_acerto = str.encode('500')  
-            UDPServerSocket.sendto(resposta_acerto, endereco_cliente)
-            
-
-def recebe_mensagens():
-    global resposta
-    
-    global endereco_cliente
-
-    mensagem_cliente = UDPServerSocket.recvfrom(1024)  
-    resposta = str(mensagem_cliente[0].decode())     #resposta dada pelo cliente
-    endereco_cliente = mensagem_cliente[1]
-    
-    print("Recebeu",resposta,"de",endereco_cliente[0])
-
-
-def partida():
-    global resposta
-
-    global acerto
-    acerto = False
-
-    envia_todos(listaPerguntas[k][0]) #Envia a pergunta para todos os jogadores
-
-    while(True):
-        recebe_mensagens()
-        
-        while(resposta=="0"):  
-            time.sleep(0.1)
-
-        if (resposta != listaPerguntas[k][1]): #Resposta errada
-
-            resposta_cliente = str.encode("400")   
-            UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
-
-            posicao = listaJogadores.index(endereco_cliente)
-            Pontuacao[posicao] -= 5
-
-            resposta = "0"
-            acerto = False
-                
-        elif (resposta == listaPerguntas[k][1]): #Resposta correta
-
-            #resposta_cliente = str.encode("500")  
-            #UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
-
-            envia_resposta_errada(endereco_cliente) #envia para o resto que errou
-
-            posicao = listaJogadores.index(endereco_cliente)
-            Pontuacao[posicao] += 25
-
-            resposta = "0"
-            acerto = True
-
-            break
-
-
-#trabalhar com arquivo de texto
-#arquivo = open("projeto_redes.txt", "r")
-#perguntas = le_arquivo(arquivo)
-#arquivo.close()
-
-#resposta_cliente = str.encode('start')
-#UDPServerSocket.sendto(resposta_cliente, endereco_cliente)
-
-listaPerguntas = [('SIM', 'SIM'),('SIM', 'SIM'),('SIM', 'SIM'),('SIM', 'SIM'),('SIM', 'SIM')]
-
-envia_todos('start')
-
-time.sleep(2)
-
-#t = Thread(target=recebe_mensagens, daemon=True)  #Thread para receber mensagens dos usuarios
-#t.start()
-
-resposta = "0"
+ja_iniciou = True
 
 for k in range(5):  #5 rodadas
-    print("partida n:",k+1)
+
+    time.sleep(3) #Aguarda todos reiniciarem suas partidas
+
+    print("\nPartida nº:",k+1)
 
     t2 = Thread(target=partida, daemon=True)  #Thread para partida
     t2.start()
@@ -169,29 +165,34 @@ for k in range(5):  #5 rodadas
     tempo=0
     while(True):
         if(acerto):
-            #resposta_cliente = str.encode('700')
-            #UDPServerSocket.sendto(resposta_cliente, endereco_cliente) #envia para quem acertou
-            print(endereco_cliente[0],"acertou")
             break
         
-        if(tempo==5):   
+        if(tempo==8):   
             print("Tempo esgotado")
-            envia_todos('800') #enviar para todo mundo
+            envia_todos('800','Thread&') #enviar para todo mundo
+            for x in range(len(pontuacao)):
+                pontuacao[x]-=1
             break
         else:
             time.sleep(1)
             tempo+=1
-            
     acerto = False
+    resposta_cadastrado = ''
+    endereco_cliente_cad= ''
 
-pontos = ""
+pontos = ''
 
 for x in range(len(listaNomes)):
+    pontos+= (listaNomes[x]+" = "+ str(pontuacao[x]) +"\n")
 
-    pontos+= (listaNomes[x]+ " = " + str(Pontuacao[x]) + "\n")
+print("\nFim de Jogo!\nPontuacoes da partida:\n",pontos)
 
-envia_todos(pontos)
+for cliente in listaJogadores:  #cliente = (IP, Porta)
+    resposta_cliente = str.encode(pontos)
+    UDPServerSocket.sendto(resposta_cliente, cliente)
+
+comandoInicio = 'end'
+
+ja_iniciou = False
 
 print("Fim")
-
-
