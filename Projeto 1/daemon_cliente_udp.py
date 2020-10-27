@@ -3,110 +3,123 @@ from threading import Thread
 import time
 
 parada = False
-msgServidor = ""
+msgServidor_cliente = ''  # msg do servidor para o cliente
+msgServidor_thread = ''  # msg do servidor pro sistema gerenciar threads
 
 UDPClientSocket = socket(AF_INET, SOCK_DGRAM)
 
 
 def envia(mensagem):  # Criação e envio da mensagem
     mensagem_cliente = mensagem.encode()
-    UDPClientSocket.sendto(mensagem_cliente, ('localhost', 9500))
+    UDPClientSocket.sendto(mensagem_cliente, ('192.168.1.91', 9500))
 
 
 def recebe():  # Thread
-    global msgServidor
+    global msgServidor_cliente
+    global msgServidor_thread
 
     while (True):
-        resposta_servidor = UDPClientSocket.recvfrom(1024)  # ([0] = mensagem, [1] = endereco ([0]IP, [1]PORTA))
-        msgServidor = str(resposta_servidor[0].decode())
-        # print("\nRECEBEU:",msgServidor)
-        time.sleep(1)
+        resposta_servidor = UDPClientSocket.recvfrom(
+            1024)  # ([0] = mensagem: [0]continua thread (Cliente/Thread) , [1]DADOS)/([1] / endereco: ([0]IP, [1]PORTA)
+        resposta = str(resposta_servidor[0].decode())
+
+        status_cliente = ''
+        mensagem = ''
+
+        for x in resposta:
+            if (x == '&'):
+                status_cliente = mensagem
+                mensagem = ''
+            else:
+                mensagem += x
+
+        if (status_cliente == 'Thread'):
+            msgServidor_thread = mensagem
+        else:
+            msgServidor_cliente = mensagem
 
 
 def partida():  # Thread 2
     global parada
-    global msgServidor
+    global msgServidor_cliente
 
-    while (msgServidor == 'start' or msgServidor == '500' or msgServidor == '900' or msgServidor == '800'):
-        pass
+    while (msgServidor_cliente == ''):  # Aguarda servidor enviar pergunta
+        time.sleep(0.1)
 
-    pergunta = msgServidor
+    pergunta = msgServidor_cliente
+    print("\nPartida nº", c + 1, "\nPergunta:", pergunta)  # Imprime pergunta nº c+1
 
-    print(pergunta)  # Imprime pergunta nº c+1
+    resposta = input("Insira sua resposta: ")
 
-    envia(input("Insira sua resposta: "))  # responde ao servidor. funcao recebe() recebe avaliacao
+    envia('Cliente1&' + resposta)  # responde ao servidor. funcao recebe() recebe avaliacao
 
-    while (True):
-        while (msgServidor == pergunta):
-            pass
+    while (True):  # fica preso aqui ate acertar ou a thread ser quebrada
+        if msgServidor_cliente == "400":
+            msgServidor_cliente = ''
+            resposta = input("Resposta incorreta.. tente novamente: ")
+            envia('Cliente1&' + resposta)
+        else:
+            time.sleep(0.1)
 
-        if msgServidor == "400":
-            envia(input("\nResposta incorreta.. tente novamente: "))
-            time.sleep(1)
-
-        elif msgServidor == "500" and c<4:
-            print("\nResposta correta! Próxima pergunta --> ")
-            break
 
 print("---------------------------------")  ###Início do programa
 print("    BEM VINDO AO JOGUINHO        ")
 print("Para iniciar, digite seu nome!")
 
-
 nome = input("Nome:")
 
-while(nome==""):
+while (nome == ''):
     nome = input("Nome inválido, tente novamente:")
 
-envia(nome)
+envia('Cliente0&' + nome)
 
 t = Thread(target=recebe, daemon=True)  # Thread para receber dados do servidor
 t.start()
 
-while (msgServidor == ''):
-    pass
+while msgServidor_cliente == '':
+    time.sleep(0.1)
 
-print(msgServidor)  # msgServidor = Aguardando outros participantes...
+if (msgServidor_cliente == 'JaIniciou'):
+    print("Partida Já Iniciou. Tente novamente em instantes")
+    input("Pressione qualquer tecla para finalizar")
+    exit(0)
 
-while (msgServidor != 'start'):
-    # print(msgServidor,"msg")
-    pass
+print(msgServidor_cliente)  # msgServidor_cliente = Aguardando outros participantes...
 
+while (msgServidor_cliente != 'start'):  # Aguarda servidor enviar comando para inicio
+    time.sleep(0.1)
+
+msgServidor_cliente = ''
 print("Iniciando competicao...")  # Iniciando competicao...
 
 for c in range(5):  # 5 partidas
-    print("\npartida n:", c + 1)
-
     t2 = Thread(target=partida, daemon=True)  # Thread para cada partida
     t2.start()
 
-    anterior = msgServidor
-
     while (True):
-        if msgServidor == '500':
-            time.sleep(2)
+        if msgServidor_cliente == '500' and c < 4:
+            msgServidor_cliente = ''
+            print("\nResposta correta! Próxima pergunta --> ")
             break
 
-        if msgServidor == '900':
+        if msgServidor_thread == '900':
+            msgServidor_thread = ''
+            msgServidor_cliente = ''
             print("\nOutro jogador acertou")
-            msgServidor = 'start'
             break
 
-        elif msgServidor == '800':
+        elif msgServidor_thread == '800':
+            msgServidor_thread = ''
+            msgServidor_cliente = ''
             print("\nTempo esgotado")
-            msgServidor = 'start'
             break
-
         else:
-            time.sleep(0.7)
+            time.sleep(0.1)
 
-
-print("\nFim de jogo! Pontuações da rodada:")
+print("\nFim de jogo! Pontuações da partida:")
 
 resposta_servidor = UDPClientSocket.recvfrom(1024)  # ([0] = mensagem, [1] = endereco ([0]IP, [1]PORTA))
 msgServidor = str(resposta_servidor[0].decode())
 print(msgServidor)
 
-
-#print("Deseja jogar novamente?")
-exit(0)
+print("Deseja jogar novamente?")
