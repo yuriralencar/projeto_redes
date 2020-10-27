@@ -1,27 +1,35 @@
 from socket import socket, AF_INET, SOCK_DGRAM
 from threading import Thread
+from threading import Lock
 import time
+import sys
 
 parada = False
 msgServidor_cliente = ''  # msg do servidor para o cliente
 msgServidor_thread = ''  # msg do servidor pro sistema gerenciar threads
+continua = True
+em_partida = False
+
+lock_envio = Lock()
 
 UDPClientSocket = socket(AF_INET, SOCK_DGRAM)
 
 
 def envia(mensagem):  # Criação e envio da mensagem
     mensagem_cliente = mensagem.encode()
-    UDPClientSocket.sendto(mensagem_cliente, ('192.168.1.91', 9500))
+    UDPClientSocket.sendto(mensagem_cliente, ('localhost', 9500))
 
 
 def recebe():  # Thread
+    global continua
     global msgServidor_cliente
     global msgServidor_thread
 
-    while (True):
-        resposta_servidor = UDPClientSocket.recvfrom(
-            1024)  # ([0] = mensagem: [0]continua thread (Cliente/Thread) , [1]DADOS)/([1] / endereco: ([0]IP, [1]PORTA)
+    while (continua):
+        resposta_servidor = UDPClientSocket.recvfrom(1024)  # ([0] = mensagem: [0]continua thread (Cliente/Thread) , [1]DADOS)/([1] / endereco: ([0]IP, [1]PORTA)
         resposta = str(resposta_servidor[0].decode())
+
+        #print("\nRecebeu",resposta,"\n")
 
         status_cliente = ''
         mensagem = ''
@@ -38,22 +46,26 @@ def recebe():  # Thread
         else:
             msgServidor_cliente = mensagem
 
-
 def partida():  # Thread 2
     global parada
     global msgServidor_cliente
+    global em_partida
 
     while (msgServidor_cliente == ''):  # Aguarda servidor enviar pergunta
-        time.sleep(0.1)
+            time.sleep(0.1)
 
     pergunta = msgServidor_cliente
     print("\nPartida nº", c + 1, "\nPergunta:", pergunta)  # Imprime pergunta nº c+1
+
+    if (em_partida==False):
+        sys.exit()
 
     resposta = input("Insira sua resposta: ")
 
     envia('Cliente1&' + resposta)  # responde ao servidor. funcao recebe() recebe avaliacao
 
     while (True):  # fica preso aqui ate acertar ou a thread ser quebrada
+
         if msgServidor_cliente == "400":
             msgServidor_cliente = ''
             resposta = input("Resposta incorreta.. tente novamente: ")
@@ -73,53 +85,80 @@ while (nome == ''):
 
 envia('Cliente0&' + nome)
 
-t = Thread(target=recebe, daemon=True)  # Thread para receber dados do servidor
+t = Thread(target=recebe)  # Thread para receber dados do servidor
 t.start()
 
-while msgServidor_cliente == '':
-    time.sleep(0.1)
 
-if (msgServidor_cliente == 'JaIniciou'):
-    print("Partida Já Iniciou. Tente novamente em instantes")
-    input("Pressione qualquer tecla para finalizar")
-    exit(0)
+while(continua):  #continua = True (variavel global)
+    while msgServidor_cliente == '':
+        time.sleep(0.1)
 
-print(msgServidor_cliente)  # msgServidor_cliente = Aguardando outros participantes...
+    if (msgServidor_cliente == 'JaIniciou'):
+        print("Partida Já Iniciou. Tente novamente em instantes")
+        input("Pressione qualquer tecla para finalizar")
+        exit(0)
 
-while (msgServidor_cliente != 'start'):  # Aguarda servidor enviar comando para inicio
-    time.sleep(0.1)
+    print(msgServidor_cliente)  # msgServidor_cliente = Aguardando outros participantes...
 
-msgServidor_cliente = ''
-print("Iniciando competicao...")  # Iniciando competicao...
+    while (msgServidor_cliente != 'start'):  # Aguarda servidor enviar comando para inicio
+        time.sleep(0.1)
 
-for c in range(5):  # 5 partidas
-    t2 = Thread(target=partida, daemon=True)  # Thread para cada partida
-    t2.start()
+    msgServidor_cliente = ''
+    print("Iniciando competicao...")  # Iniciando competicao...
 
-    while (True):
-        if msgServidor_cliente == '500' and c < 4:
-            msgServidor_cliente = ''
-            print("\nResposta correta! Próxima pergunta --> ")
-            break
+    em_partida = True
 
-        if msgServidor_thread == '900':
-            msgServidor_thread = ''
-            msgServidor_cliente = ''
-            print("\nOutro jogador acertou")
-            break
+    for c in range(5):  # 5 partidas
+        t2 = Thread(target=partida)  # Thread para cada partida
+        t2.start()
 
-        elif msgServidor_thread == '800':
-            msgServidor_thread = ''
-            msgServidor_cliente = ''
-            print("\nTempo esgotado")
-            break
-        else:
-            time.sleep(0.1)
+        while (True):
+            if msgServidor_cliente == '500' and c < 4:
+                msgServidor_cliente = ''
+                msgServidor_thread = ''
+                print("\nResposta correta! Próxima pergunta --> ")
+                break
 
-print("\nFim de jogo! Pontuações da partida:")
+            if msgServidor_cliente == '500' and c == 4:
+                msgServidor_cliente = ''
+                msgServidor_thread = ''
+                print("\nResposta correta!")
+                break
 
-resposta_servidor = UDPClientSocket.recvfrom(1024)  # ([0] = mensagem, [1] = endereco ([0]IP, [1]PORTA))
-msgServidor = str(resposta_servidor[0].decode())
-print(msgServidor)
+            if msgServidor_thread == '900':
+                msgServidor_thread = ''
+                msgServidor_cliente = ''
+                print("\nOutro jogador acertou")
+                del t2
+                break
 
-print("Deseja jogar novamente?")
+            elif msgServidor_thread == '800':
+                msgServidor_thread = ''
+                msgServidor_cliente = ''
+                print("\nTempo esgotado")
+                del t2
+                break
+            else:
+                time.sleep(0.1)
+
+    em_partida = False
+    print("\nFim de jogo! Pontuações da partida:")
+
+    while msgServidor_thread=='':  #aguarda servidor enviar pontuacoes
+        time.sleep(0.1)
+    print(msgServidor_thread)
+    msgServidor_thread = ''
+
+    #opcao = input("Deseja jogar novamente? (0/1) --> ")
+
+    #if(opcao)=='1':
+       # opcao2 = input("Deseja mudar o nome? (0/1) --> ")
+     #   if(opcao2=='1'):
+      #      nome = input("Insira o novo nome:")
+      #      envia('Cliente0&' + nome)
+      #  else:
+      #      envia('Cliente0&' + nome)
+   # else:
+    continua = False
+
+print("Obrigado por jogar. Volte sempre!")
