@@ -1,10 +1,40 @@
-Tu e gay?
-NAO
-Capital do Forro?
-CARUARU
-Capital de Pernumbuco?
-RECIFE
-Capital do Brasil?
-BRASILIA
-Sim ou Nao?
-SIM
+Capital do Canadá?
+ottawa
+Capital da Turquia?
+ancara
+Capital da Rússia?
+moscou
+Capital da Alemanha?
+berlim
+Capital do Equador?
+quito
+Capital da Angola?
+luanda
+Capital do Cabo Verde?
+praia
+Capital de Portugal?
+lisboa
+Capital da Espanha?
+madrid
+Capital dos EUA?
+washington
+Capital do Chile?
+santiago
+Capital do Peru?
+lima
+Capital da Venezuela?
+caracas
+Capital de Israel?
+telaviv
+Capital da Austrália?
+canberra
+Capital do Líbano?
+beirute
+Capital do Omã?
+mascate
+Capital da Tailândia?
+bangcoc
+Capital da Coreia do Sul?
+seul
+Capital da China?
+pequim
