@@ -1,6 +1,7 @@
 from socket import socket, AF_INET, SOCK_DGRAM
 from threading import Thread
 import time
+import random
 
 #Criacao do socket
 UDPServerSocket = socket(AF_INET, SOCK_DGRAM)
@@ -14,6 +15,37 @@ endereco_cliente_nao_cad = None
 
 acerto = None
 ja_iniciou = False
+
+def num(number):
+    if number % 2 == 0:
+        return True
+    else:
+        return False
+
+
+def elimina_n(palavra):
+    '''Elimina o \n'''
+    novaString = ""
+    for caracter in palavra:
+        if caracter != "\n":
+            novaString += caracter
+    return novaString
+
+
+def le_arquivo(arquivo):
+    '''Cria nova lista sem \n'''
+    novaLista = []
+    cont = 0
+    tupla = ()
+    for palavra in arquivo:
+        cont += 1
+        caracter = elimina_n(palavra)
+        tupla1 = (caracter,)
+        tupla += tupla1
+        if num(cont):
+            novaLista.append(tupla)
+            tupla = ()
+    return novaLista
 
 def recebe_mensagens():
     global resposta_cadastrado
@@ -148,7 +180,12 @@ while(continua):
 
     time.sleep(1) # Aguarda todos receberem a mensagem "Aguardando outros participantes...")
 
-    listaPerguntas = [('Pergunta 1', '1'),('Pergunta 2', '2'),('Pergunta 3', '3'),('Pergunta 4', '4'),('Pergunta 5', '5')]
+    arquivo = open("perguntas.txt", "r")
+    todasPerguntas = le_arquivo(arquivo)   #Lê base de perguntas do arquivo .txt
+    arquivo.close()
+
+    listaPerguntas = random.sample(todasPerguntas, 5)  #Escolhe 5 perguntas de forma aleatória
+
 
     comandoInicio = 'start'
 
@@ -177,7 +214,7 @@ while(continua):
                 acerto = False
                 break
             
-            if(tempo==3):   
+            if(tempo==10):
                 print("Tempo esgotado")
                 envia_todos('800','Thread&') #enviar para todo mundo
                 for x in range(len(pontuacao)):
