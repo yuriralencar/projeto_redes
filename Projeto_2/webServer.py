@@ -10,7 +10,7 @@ class Server:
         while True:
             (self.client_socket, self.address_client) = self.server.accept()
 
-            data = self.recv()
+            data = self.recv(1024)
             self.send(data)
 
 
@@ -26,8 +26,8 @@ class Server:
         status = 200
 
         try:
-            arq = open(path, 'r')
-            file = self.le_arquivo(arq)
+            arq = open(path, 'rb')
+            file = arq.read()
         except FileNotFoundError:
             status = 404
 
@@ -59,20 +59,6 @@ class Server:
 
         self.client_socket.send(page.encode())
 
-    def elimina_n(self, palavra):
-        '''Elimina o \n'''
-        nova_string = ""
-        for caracter in palavra:
-            nova_string += caracter
-        return nova_string
-
-    def le_arquivo(self, arquivo):
-        '''Cria nova lista sem \n'''
-        nova_string = ''
-
-        for palavra in arquivo:
-            nova_string += self.elimina_n(palavra)
-        return nova_string
 
     def close(self):
         self.client_socket.close()
