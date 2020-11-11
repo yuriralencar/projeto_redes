@@ -1,11 +1,19 @@
 from socket import socket, AF_INET, SOCK_STREAM
+import os
 
 
 class Server:
     def __init__(self, host, port):
         self.server = socket(AF_INET, SOCK_STREAM)
         self.server.bind((host, port))
+        self.documentRoot = './diretorio'
+        self.status = 200
+
         self.server.listen()
+
+        if not os.path.exists(self.documentRoot):
+            # cria diretório
+            os.mkdir(self.documentRoot)
 
         while True:
             (self.client_socket, self.address_client) = self.server.accept()
@@ -13,33 +21,51 @@ class Server:
             data = self.recv()
             self.send(data)
 
-
     def recv(self):
         data = self.client_socket.recv(2048)
         print(data.decode())
         return data
 
     def send(self, data):
-        lista = data.decode().split(' ')
-        path = ""
-        path += lista[1][1:] # caminho do arquivo pesquisado pelo Browser sem o \
-        status = 200
+        lista = data.decode().split(" ")
+        path = self.documentRoot + lista[1]
+
+        extensao = lista[1].split(".")
+        extensao = extensao[1]
+        comando = lista[0]
+
+        if comando != "GET":
+            self.status = 501
+
+        if lista[1] == "/":
+            path = self.documentRoot + "index.html"
 
         try:
-            arq = open(path, 'r')
-            file = self.le_arquivo(arq)
+            arq = open(path, 'rb')
+            file = arq.read()
         except FileNotFoundError:
-            status = 404
+            self.status = 404
 
-        if status == 200:
-            page = ('HTTP/1.1 200 OK\r\n'
+        if self.status == 501:
+            page = ('HTTP/1.1 501 not implemented\r\n'
                     'Date: Wen 21 Oct 2020 12:10:30 GMT\r\n'
+                    'Allow: GET'
                     'Server: projetoredes/0.0.1 (Windows)\r\n'
                     'Content-Type: text/html\r\n'
                     '\r\n')
-            page += file
+            page += ('''<!DOCTYPE html>
+                                    <html lang="en">
+                                    <head>
+                                        <meta charset="UTF-8">
+                                        <title>501 not implemented</title>
+                                    </head>
+                                    <body>
+                                        501 not implemented.
+                                    </body>
+                                    </html>''')
+            newpage = page.encode()
 
-        elif status == 404:
+        elif self.status == 404:
             page = ('HTTP/1.1 404 Not Found\r\n'
                     'Date: Wen 21 Oct 2020 12:10:30 GMT\r\n'
                     'Server: projetoredes/0.0.1 (Windows)\r\n'
@@ -56,23 +82,18 @@ class Server:
                             sorry, this file wasn't found.
                         </body>
                         </html>''')
+            newpage = page.encode()
 
-        self.client_socket.send(page.encode())
+        else:
+            page = ('HTTP/1.1 200 OK\r\n'
+                    f'Date: {os.path.getatime(path)}\r\n'
+                    'Server: projetoredes/0.0.1 (Windows)\r\n'
+                    'Content-Type: image/jpg\r\n'
+                    f'Content-lenght: {os.path.getsize(path)}\r\n'
+                    '\r\n')
+            newpage = page.encode() + file
 
-    def elimina_n(self, palavra):
-        '''Elimina o \n'''
-        nova_string = ""
-        for caracter in palavra:
-            nova_string += caracter
-        return nova_string
-
-    def le_arquivo(self, arquivo):
-        '''Cria nova lista sem \n'''
-        nova_string = ''
-
-        for palavra in arquivo:
-            nova_string += self.elimina_n(palavra)
-        return nova_string
+        self.client_socket.send(newpage)
 
     def close(self):
         self.client_socket.close()
