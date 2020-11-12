@@ -2,6 +2,8 @@ from socket import socket, AF_INET, SOCK_STREAM
 from mimetypes import guess_type
 import os
 
+# IMPLEMENTAR O ERRO 400 E 505
+# ABRIR DE DIRETÓRIO PRA OUTRO
 
 class Server:
     def __init__(self, host, port):
@@ -31,23 +33,39 @@ class Server:
 
     def send(self, data):
         lista = data.decode().split(" ")
+        print(lista)
         caminho = self.documentRoot + lista[1]
-        if os.path.isdir(caminho):
-            caminhos = [os.path.join(caminho, nome) for nome in os.listdir(caminho)]
-            for p in caminhos:
-                print(p)
 
         comando = lista[0]
 
         if comando != "GET":
             self.status = 501
 
-        if lista[1] == "/":
-            caminho = self.documentRoot + "index.html"
-
         try:
-            arq = open(caminho, 'rb')
-            file = arq.read()
+            if os.path.isdir(caminho):
+                caminhos = [os.path.join(caminho, nome) for nome in os.listdir(caminho)]
+                for p in caminhos:
+                    if not os.path.isdir(p):
+                        self.html += f'''
+                                <tr>
+                                    <td><a href= {f'{os.path.basename(p)}'}>{os.path.basename(p)}</td>
+                                    <td align= "right">####</td>
+                                    <td align= "right">{os.path.getsize(p)}</td>
+                                    <td>&nbsp;</td>
+                                </tr>
+                        '''
+
+                self.html += '''
+                        </table>
+                    </body>
+                    </html>
+                '''
+                file = self.html.encode()
+                self.htmlPadrao()
+            else:
+                arq = open(caminho, 'rb')
+                file = arq.read()
+                arq.close()
         except FileNotFoundError:
             self.status = 404
 
@@ -55,7 +73,7 @@ class Server:
             page = ('HTTP/1.1 501 not implemented\r\n'
                     'Date: Wen 21 Oct 2020 12:10:30 GMT\r\n'
                     'Allow: GET'
-                    'Server: projetoredes/0.0.1 (Windows)\r\n'
+                    'Server: servidordotchan/0.0.1 (Windows)\r\n'
                     'Content-Type: text/html\r\n'
                     '\r\n')
             page += ('''
@@ -74,7 +92,7 @@ class Server:
         elif self.status == 404:
             page = ('HTTP/1.1 404 Not Found\r\n'
                     'Date: Wen 21 Oct 2020 12:10:30 GMT\r\n'
-                    'Server: projetoredes/0.0.1 (Windows)\r\n'
+                    'Server: servidordotchan/0.0.1 (Windows)\r\n'
                     'Content-Type: text/html\r\n'
                     '\r\n')
             page += ('''
@@ -94,7 +112,7 @@ class Server:
         else:
             page = ('HTTP/1.1 200 OK\r\n'
                     f'Date: {os.path.getatime(caminho)}\r\n'
-                    'Server: projetoredes/0.0.1 (Windows)\r\n'
+                    'Server: servidordotchan/0.0.1 (Windows)\r\n'
                     f'Content-Type: {guess_type(caminho)[0]}\r\n'
                     f'Content-lenght: {os.path.getsize(caminho)}\r\n'
                     '\r\n')
@@ -119,14 +137,10 @@ class Server:
                     <th>Size</th>
                     <th>Description</th>
                 </tr>
-            </table>
-
-        </body>
-        </html>'''
+            '''
 
     def close(self):
         self.client_socket.close()
-
 
 server = Server("localhost", 8080)
 server.close()
