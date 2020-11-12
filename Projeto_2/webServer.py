@@ -55,8 +55,19 @@ class Server:
                                 </tr>
                         '''
 
+                    else:
+                        self.html += f'''
+                                <tr>
+                                    <td><a href= {f'{os.path.basename(p)}'}>{os.path.basename(p)}</td>
+                                    <td align= "right"></td>
+                                    <td align= "right"></td>
+                                    <td>&nbsp;</td>
+                                </tr>
+                        '''
+
                 self.html += '''
                         </table>
+                        <h3>Servidor do Tchan.</h3>
                     </body>
                     </html>
                 '''
