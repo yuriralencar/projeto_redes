@@ -10,6 +10,7 @@ msgServidor_thread = ''  # msg do servidor pro sistema gerenciar threads
 continua = True
 em_partida = False
 
+
 lock_envio = Lock()
 
 UDPClientSocket = socket(AF_INET, SOCK_DGRAM)
@@ -76,6 +77,7 @@ def partida():  # Thread 2
 
 print("---------------------------------")  ###Início do programa
 print("    BEM VINDO AO JOGUINHO        ")
+print("Teste sua habilidade em geografia acertando\no maior número de capitais!\n")
 print("Para iniciar, digite seu nome!")
 
 nome = input("Nome:")
