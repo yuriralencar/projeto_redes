@@ -1,15 +1,15 @@
 from socket import socket, AF_INET, SOCK_STREAM
 from mimetypes import guess_type
+from datetime import datetime
 import os
 
-# IMPLEMENTAR O ERRO 400 E 505
-# ABRIR DE DIRETÓRIO PRA OUTRO
 
 class Server:
     def __init__(self, host, port):
         self.server = socket(AF_INET, SOCK_STREAM)
         self.server.bind((host, port))
         self.documentRoot = 'C:/users/vinny/pycharm/py/redes/servidor_tcp/projeto2/diretorio'
+        self.caminhoAtual = 'C:/users/vinny/pycharm/py/redes/servidor_tcp/projeto2/diretorio'
         self.html = ''
         self.status = 200
 
@@ -21,10 +21,14 @@ class Server:
             os.mkdir(self.documentRoot)
 
         while True:
-            (self.client_socket, self.address_client) = self.server.accept()
+            try:
+                (self.client_socket, self.address_client) = self.server.accept()
 
-            data = self.recv()
-            self.send(data)
+                data = self.recv()
+                self.send(data)
+            except IndexError:
+                self.close()
+                break
 
     def recv(self):
         data = self.client_socket.recv(2048)
@@ -33,33 +37,54 @@ class Server:
 
     def send(self, data):
         lista = data.decode().split(" ")
-        print(lista)
-        caminho = self.documentRoot + lista[1]
-
+        version = lista[2][5:8]  # versão do http
+        caminho = self.documentRoot
+        if lista[1] != '/favicon.ico':
+            caminho = self.documentRoot + lista[1]
         comando = lista[0]
+
+        for caracter in caminho:
+            if caracter == ' ':
+                self.status = 400
 
         if comando != "GET":
             self.status = 501
 
+        if version != '1.1' and version != '1.0':
+            self.status = 505
+
         try:
             if os.path.isdir(caminho):
+                document_root_split = self.documentRoot.split('/')
+                # caminhos dos arquivos de 'caminho'
                 caminhos = [os.path.join(caminho, nome) for nome in os.listdir(caminho)]
                 for p in caminhos:
+                    caminho_split = p.split('/')
+                    flag = False
+                    caminho_atual = ''
+                    for arquivo in caminho_split:
+                        if flag:
+                            caminho_atual += ('/' + arquivo)
+                        elif arquivo == document_root_split[-1]:
+                            flag = True
+                    stamp = os.path.getmtime(p)
+                    dt_object = datetime.fromtimestamp(stamp)
                     if not os.path.isdir(p):
                         self.html += f'''
                                 <tr>
-                                    <td><a href= {f'{os.path.basename(p)}'}>{os.path.basename(p)}</td>
-                                    <td align= "right">####</td>
+                                    <td><a href= {f'{caminho_atual}'}>{os.path.basename(p)}</td>
+                                    <td align= "right">{dt_object}</td>
                                     <td align= "right">{os.path.getsize(p)}</td>
                                     <td>&nbsp;</td>
                                 </tr>
                         '''
 
                     else:
+
                         self.html += f'''
                                 <tr>
-                                    <td><a href= {f'{os.path.basename(p)}'}>{os.path.basename(p)}</td>
-                                    <td align= "right"></td>
+                                    <td><a href= {f'{caminho_atual}'}>{os.path.basename(p)}</td>
+                                    <td align= "right">{dt_object}</td>
                                     <td align= "right"></td>
                                     <td>&nbsp;</td>
                                 </tr>
@@ -74,6 +99,7 @@ class Server:
                 file = self.html.encode()
                 self.htmlPadrao()
             else:
+                print(caminho)
                 arq = open(caminho, 'rb')
                 file = arq.read()
                 arq.close()
@@ -95,10 +121,51 @@ class Server:
                         <title>501 not implemented</title>
                     </head>
                     <body>
-                        501 not implemented.
+                        <h1>501 not implemented.</h1>
                     </body>
                     </html>''')
             newpage = page.encode()
+            self.status = 200
+
+        elif self.status == 505:
+            page = ('HTTP/1.1 505 HTTP Version Not Supported\r\n'
+                    'Date: Wen 21 Oct 2020 12:10:30 GMT\r\n'
+                    'Server: servidordotchan/0.0.1 (Windows)\r\n'
+                    'Content-Type: text/html\r\n'
+                    '\r\n')
+            page += ('''
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>505 HTTP Version Not Supported</title>
+                    </head>
+                    <body>
+                        <h1>505 HTTP Version Not Supported</h1>
+                    </body>
+                    </html>''')
+            newpage = page.encode()
+            self.status = 200
+
+        elif self.status == 400:
+            page = ('HTTP/1.1 400 Bad Request\r\n'
+                    'Date: Wen 21 Oct 2020 12:10:30 GMT\r\n'
+                    'Server: servidordotchan/0.0.1 (Windows)\r\n'
+                    'Content-Type: text/html\r\n'
+                    '\r\n')
+            page += ('''
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>400 Bad Request</title>
+                    </head>
+                    <body>
+                        <h1>400 Bad Request</h1>
+                    </body>
+                    </html>''')
+            newpage = page.encode()
+            self.status = 200
 
         elif self.status == 404:
             page = ('HTTP/1.1 404 Not Found\r\n'
@@ -114,11 +181,12 @@ class Server:
                             <title>404 not found</title>
                         </head>
                         <body>
-                            404 error not found
+                            <h1>404 error not found</h1>
                             sorry, this file wasn't found.
                         </body>
                         </html>''')
             newpage = page.encode()
+            self.status = 200
 
         else:
             page = ('HTTP/1.1 200 OK\r\n'
@@ -153,5 +221,5 @@ class Server:
     def close(self):
         self.client_socket.close()
 
+
 server = Server("localhost", 8080)
-server.close()
