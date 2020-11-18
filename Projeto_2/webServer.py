@@ -8,8 +8,8 @@ class Server:
     def __init__(self, host, port):
         self.server = socket(AF_INET, SOCK_STREAM)
         self.server.bind((host, port))
-        self.documentRoot = 'C:/users/vinny/pycharm/py/redes/servidor_tcp/projeto2/diretorio'
-        self.caminhoAtual = 'C:/users/vinny/pycharm/py/redes/servidor_tcp/projeto2/diretorio'
+        self.documentRoot = os.getcwd()
+        self.caminhoAtual = os.getcwd()
         self.html = ''
         self.status = 200
 
@@ -27,8 +27,8 @@ class Server:
                 data = self.recv()
                 self.send(data)
             except IndexError:
-                self.close()
-                break
+                print("Erro")
+                pass
 
     def recv(self):
         data = self.client_socket.recv(2048)
@@ -219,7 +219,9 @@ class Server:
             '''
 
     def close(self):
+        print("Servidor WEB finalizado")
         self.client_socket.close()
 
 
-server = Server("localhost", 8080)
+print("Servidor WEB ouvindo requisições\n\n")
+server = Server("192.168.1.65", 8080)
