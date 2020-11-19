@@ -58,6 +58,34 @@ class Server:
                 document_root_split = self.documentRoot.split('/')
                 # caminhos dos arquivos de 'caminho'
                 caminhos = [os.path.join(caminho, nome) for nome in os.listdir(caminho)]
+
+                caminho_split = caminho.split('/')
+                flag = False
+                caminho_atual = ''
+                for arquivo in caminho_split:
+                    if flag:
+                        caminho_atual += ('/' + arquivo)
+                    elif arquivo == document_root_split[-1]:
+                        flag = True
+
+                self.html = f'''
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Index of {caminho_atual}</title>
+                    </head>
+                    <body>
+                        <h1>Index of {caminho_atual}</h1>
+                        <table>
+                            <tr>
+                                <th>Name</th>
+                                <th>Last Modified</th>
+                                <th>Size</th>
+                                <th>Description</th>
+                            </tr>
+                    '''
+
                 for p in caminhos:
                     caminho_split = p.split('/')
                     flag = False
@@ -80,7 +108,6 @@ class Server:
                         '''
 
                     else:
-
                         self.html += f'''
                                 <tr>
                                     <td><a href= {f'{caminho_atual}'}>{os.path.basename(p)}</td>
@@ -224,4 +251,4 @@ class Server:
 
 
 print("Servidor WEB ouvindo requisições\n\n")
-server = Server("192.168.1.65", 8080)
+server = Server("localhost", 8080)
