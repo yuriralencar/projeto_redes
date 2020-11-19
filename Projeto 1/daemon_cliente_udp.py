@@ -151,16 +151,6 @@ while(continua):  #continua = True (variavel global)
     print(msgServidor_thread)
     msgServidor_thread = ''
 
-    #opcao = input("Deseja jogar novamente? (0/1) --> ")
-
-    #if(opcao)=='1':
-       # opcao2 = input("Deseja mudar o nome? (0/1) --> ")
-     #   if(opcao2=='1'):
-      #      nome = input("Insira o novo nome:")
-      #      envia('Cliente0&' + nome)
-      #  else:
-      #      envia('Cliente0&' + nome)
-   # else:
     continua = False
 
 print("Obrigado por jogar. Volte sempre!")
